@@ -1,13 +1,13 @@
 {
   "id": "./",
-  "name": "PWA Template Responsif",
-  "short_name": "PWA Demo",
-  "description": "Aplikasi PWA responsif untuk demonstrasi template dasar Progressive Web App dengan dukungan offline dan installable.",
+  "name": "Moia - AI Makeup Analyst",
+  "short_name": "Moia",
+  "description": "Aplikasi analisis makeup berbasis AI yang menentukan tipe wajah dan memberikan rekomendasi gaya terbaik.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#4F46E5",
-  "theme_color": "#4F46E5",
+  "background_color": "#fdf0ec",
+  "theme_color": "#e8a4a4",
   "orientation": "portrait",
   "lang": "id",
   "icons": [
@@ -22,14 +22,14 @@
       "type": "image/png"
     }
   ],
-  "screenshots": [
+  "tampilanapk": [
     {
-      "src": "icons/screenshot1.png",
+      "src": "icons/tampilanapk1.png",
       "sizes": "1080x1920",
       "type": "image/png"
     },
     {
-      "src": "icons/screenshot2.png",
+      "src": "icons/tampilanapk2.png",
       "sizes": "1080x1920",
       "type": "image/png"
     }

@@ -1,22 +1,24 @@
-const CACHE_NAME = "pwa-template-v2";
+const CACHE_NAME = "moia-pwa-v3"; // Saya ubah versinya ke v3 agar cache lama terhapus
 const BASE_URL = self.registration.scope;
 
 const urlsToCache = [
   `${BASE_URL}`,
   `${BASE_URL}index.html`,
-  `${BASE_URL}offline.html`,
+  `${BASE_URL}offline.html`, // Pastikan file ini ada di folder root
   `${BASE_URL}assets/style.css`,
   `${BASE_URL}manifest.json`,
-  `${BASE_URL}icons/icon-192x192.png`,
-  `${BASE_URL}icons/icon-512x512.png`,
+  `${BASE_URL}icons/icon-192x192-A.png`, // File ini disesuaikan dengan index.html
 ];
 
 // Install Service Worker & simpan file ke cache
 self.addEventListener("install", event => {
-  self.skipWaiting(); // langsung aktif tanpa reload manual
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
+      .then(cache => {
+        console.log("Membuka cache dan menyimpan aset utama");
+        return cache.addAll(urlsToCache);
+      })
       .catch(err => console.error("Cache gagal dimuat:", err))
   );
 });
@@ -34,17 +36,17 @@ self.addEventListener("activate", event => {
           }
         })
       );
-      await self.clients.claim(); // langsung klaim kontrol ke halaman
+      await self.clients.claim();
     })()
   );
 });
 
-// Fetch event: cache-first untuk file lokal, network-first untuk API
+// Fetch event: cache-first untuk file lokal
 self.addEventListener("fetch", event => {
   const request = event.request;
   const url = new URL(request.url);
 
-  // Abaikan permintaan Chrome Extension, analytics, dll.
+  // Abaikan request non-GET dan protokol browser
   if (url.protocol.startsWith("chrome-extension")) return;
   if (request.method !== "GET") return;
 
@@ -54,21 +56,14 @@ self.addEventListener("fetch", event => {
       caches.match(request).then(response => {
         return (
           response ||
-          fetch(request).catch(() => caches.match(`${BASE_URL}offline.html`))
+          fetch(request).catch(() => {
+            // Jika gagal fetch, arahkan ke offline.html
+            if (request.headers.get("accept").includes("text/html")) {
+              return caches.match(`${BASE_URL}offline.html`);
+            }
+          })
         );
       })
     );
   } 
-  // Resource eksternal (API, CDN, dsb.)
-  else {
-    event.respondWith(
-      fetch(request)
-        .then(networkResponse => {
-          const clone = networkResponse.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
-          return networkResponse;
-        })
-        .catch(() => caches.match(request))
-    );
-  }
 });

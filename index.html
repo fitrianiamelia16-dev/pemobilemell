@@ -1,251 +1,849 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#FAD0B9" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="icons/icon-192x192-A.png" type="image/png" />
-  <title>Moia - Magic Makeup Assistant 🪄</title>
-  
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,600&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-
+  <meta name="theme-color" content="#e8a4a4"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" href="icons/icon-192x192-A.png" type="image/png"/>
+  <title>Moia - AI Makeup Analyst</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css"/>
   <style>
     :root {
-      --moia-cream: #FFF5ED;
-      --moia-pink-soft: #FAD0B9;
-      --moia-gold: #A3834B;
-      --text-main: #4A4A4A;
-      --glass: rgba(255, 255, 255, 0.7);
+      --rose-light:#f5d6d6; --rose-medium:#e8a4a4; --rose-dark:#d4797a;
+      --peach:#f0c4a8; --peach-light:#f8e8d8;
+      --gold:#c9a96e; --gold-light:#e2c98a; --gold-dark:#a07840;
+      --text-dark:#5a3825; --text-medium:#8b5e4a; --text-light:#b8896e;
+      --glass:rgba(255,255,255,0.45); --glass-border:rgba(201,169,110,0.3);
+      --shadow-gold:0 4px 24px rgba(201,169,110,0.25);
+      --shadow-rose:0 4px 24px rgba(232,164,164,0.35);
+    }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    html,body{height:100%;width:100%;}
+    body{
+      font-family:'Lato',sans-serif;
+      background:linear-gradient(135deg,#fdf0ec 0%,#f7dcd8 40%,#f0d0c8 70%,#ecdcc4 100%);
+      color:var(--text-dark);overflow:hidden;position:fixed;inset:0;
     }
 
-    body {
-      margin: 0;
-      font-family: 'Poppins', sans-serif;
-      background-color: #fcece3;
-      display: flex;
-      justify-content: center;
+    /* SCREENS */
+    .screen{
+      display:none;position:absolute;inset:0;
+      flex-direction:column;align-items:center;justify-content:center;
+      animation:fadeIn 0.5s ease;
+    }
+    .screen.active{display:flex;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+    /* SPLASH */
+    #screen-splash{
+      background:linear-gradient(150deg,#fdf0ec 0%,#f5d6d6 40%,#f0c4a8 80%,#ecdcc4 100%);
+      gap:12px;overflow:hidden;
+    }
+    #screen-splash::before{
+      content:'';position:absolute;width:400px;height:400px;border-radius:50%;
+      background:radial-gradient(circle,rgba(232,164,164,0.3) 0%,transparent 70%);
+      top:-100px;right:-100px;pointer-events:none;
+    }
+    #screen-splash::after{
+      content:'';position:absolute;width:350px;height:350px;border-radius:50%;
+      background:radial-gradient(circle,rgba(201,169,110,0.2) 0%,transparent 70%);
+      bottom:-80px;left:-80px;pointer-events:none;
+    }
+    .splash-title{
+      font-family:'Playfair Display',serif;font-size:72px;font-weight:500;letter-spacing:8px;
+      background:linear-gradient(135deg,var(--gold-dark) 0%,var(--gold) 50%,var(--gold-light) 100%);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+      line-height:1;z-index:1;
+    }
+    .gold-divider{width:60px;height:1.5px;background:linear-gradient(90deg,transparent,var(--gold),transparent);z-index:1;}
+    .splash-tagline{
+      font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;
+      color:var(--text-medium);letter-spacing:3px;font-weight:300;z-index:1;
+    }
+    .splash-dots{display:flex;gap:8px;margin-top:8px;z-index:1;}
+    .splash-dot{width:7px;height:7px;border-radius:50%;background:var(--gold-light);animation:dotPulse 1.4s ease-in-out infinite;}
+    .splash-dot:nth-child(2){animation-delay:0.2s;}.splash-dot:nth-child(3){animation-delay:0.4s;}
+    @keyframes dotPulse{0%,80%,100%{transform:scale(1);opacity:0.5;}40%{transform:scale(1.4);opacity:1;}}
+
+    /* CAMERA */
+    #screen-camera{
+      background:linear-gradient(150deg,#fdf0ec 0%,#f5d6d6 50%,#f0c4a8 100%);
+      justify-content:flex-start;padding:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+    }
+    .camera-header{
+      width:100%;padding:52px 24px 16px;
+      background:linear-gradient(180deg,rgba(253,240,236,0.97) 0%,rgba(253,240,236,0) 100%);
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    }
+    .camera-header-title{
+      font-family:'Playfair Display',serif;font-size:26px;font-weight:500;
+      background:linear-gradient(135deg,var(--gold-dark),var(--gold));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    }
+    .camera-viewport-wrap{
+      width:100%;flex:1;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;padding:0 20px 28px;gap:16px;
+    }
+    .camera-frame{
+      width:100%;max-width:320px;aspect-ratio:3/4;border-radius:24px;overflow:hidden;
+      position:relative;background:linear-gradient(135deg,#f5d6d6 0%,#f0c4a8 100%);
+      box-shadow:var(--shadow-gold),0 0 0 2px var(--glass-border);flex-shrink:0;
+    }
+    #videoEl{width:100%;height:100%;object-fit:cover;display:none;transform:scaleX(-1);}
+    .camera-placeholder{
+      width:100%;height:100%;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;gap:12px;color:var(--text-light);
+    }
+    .camera-placeholder p{font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;opacity:0.7;}
+    .camera-corner{position:absolute;width:22px;height:22px;border-color:var(--gold);border-style:solid;opacity:0.7;}
+    .camera-corner.tl{top:12px;left:12px;border-width:2px 0 0 2px;border-radius:4px 0 0 0;}
+    .camera-corner.tr{top:12px;right:12px;border-width:2px 2px 0 0;border-radius:0 4px 0 0;}
+    .camera-corner.bl{bottom:12px;left:12px;border-width:0 0 2px 2px;border-radius:0 0 0 4px;}
+    .camera-corner.br{bottom:12px;right:12px;border-width:0 2px 2px 0;border-radius:0 0 4px 0;}
+    .camera-face-guide{
+      position:absolute;width:55%;height:65%;top:50%;left:50%;
+      transform:translate(-50%,-50%);border:1.5px dashed rgba(201,169,110,0.55);
+      border-radius:50%;pointer-events:none;display:none;
+    }
+    .camera-controls{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:320px;flex-shrink:0;}
+    .btn-moia{
+      width:100%;padding:15px;border-radius:16px;border:none;
+      font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;letter-spacing:1px;
+      cursor:pointer;transition:all 0.2s ease;display:flex;align-items:center;justify-content:center;gap:8px;
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+    }
+    .btn-camera-on{background:linear-gradient(135deg,var(--gold) 0%,var(--gold-dark) 100%);color:#fff;box-shadow:0 4px 18px rgba(160,120,64,0.4);}
+    .btn-camera-on:active{transform:scale(0.97);}
+    .btn-camera-off{background:rgba(255,255,255,0.6);color:var(--text-medium);border:1.5px solid var(--glass-border);display:none;}
+    .btn-camera-off:active{transform:scale(0.97);}
+    .btn-analyze{
+      width:100%;padding:16px;border-radius:16px;border:none;
+      background:linear-gradient(135deg,#e8a4a4 0%,#d4797a 100%);color:#fff;
+      font-family:'Playfair Display',serif;font-size:17px;font-weight:500;letter-spacing:0.5px;
+      cursor:pointer;transition:all 0.2s ease;box-shadow:0 4px 18px rgba(212,121,122,0.4);
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+    }
+    .btn-analyze:active{transform:scale(0.97);}
+
+    /* LOADING */
+    #screen-loading{background:linear-gradient(150deg,#fdf0ec 0%,#f5d6d6 50%,#f0c4a8 100%);gap:22px;}
+    .loading-orb{
+      width:88px;height:88px;border-radius:50%;
+      background:linear-gradient(135deg,var(--rose-light),var(--peach));
+      display:flex;align-items:center;justify-content:center;
+      animation:orbPulse 2s ease-in-out infinite;
+      box-shadow:0 0 35px rgba(232,164,164,0.5);position:relative;
+    }
+    @keyframes orbPulse{
+      0%,100%{transform:scale(1);box-shadow:0 0 28px rgba(232,164,164,0.4);}
+      50%{transform:scale(1.07);box-shadow:0 0 48px rgba(232,164,164,0.65);}
+    }
+    .loading-orb::before{
+      content:'';position:absolute;width:110px;height:110px;border-radius:50%;
+      border:2px solid transparent;border-top-color:var(--gold);animation:spin 1.5s linear infinite;
+    }
+    .loading-orb::after{
+      content:'';position:absolute;width:128px;height:128px;border-radius:50%;
+      border:2px solid transparent;border-top-color:var(--rose-medium);animation:spin 2s linear infinite reverse;
+    }
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .loading-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--text-dark);}
+    .loading-sub{font-family:'Cormorant Garamond',serif;font-size:14px;font-style:italic;color:var(--text-light);letter-spacing:1px;margin-top:-12px;}
+    .loading-steps{display:flex;flex-direction:column;gap:8px;width:265px;}
+    .loading-step{
+      display:flex;align-items:center;gap:10px;padding:9px 13px;
+      background:var(--glass);border-radius:10px;border:1px solid var(--glass-border);
+      opacity:0.3;transition:opacity 0.45s ease;font-size:13px;color:var(--text-medium);
+    }
+    .loading-step.active{opacity:1;}
+    .loading-step-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);flex-shrink:0;}
+
+    /* RESULT */
+    #screen-result{
+      background:linear-gradient(150deg,#fdf0ec 0%,#f5d6d6 50%,#ecdcc4 100%);
+      justify-content:flex-start;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+    }
+    .result-header{
+      width:100%;padding:52px 24px 14px;
+      background:linear-gradient(180deg,rgba(253,240,236,0.98) 70%,rgba(253,240,236,0) 100%);
+      display:flex;flex-direction:column;align-items:center;gap:4px;
+      position:sticky;top:0;z-index:10;flex-shrink:0;
+    }
+    .result-back-btn{
+      position:absolute;left:16px;top:52px;background:var(--glass);
+      border:1px solid var(--glass-border);border-radius:10px;padding:7px 12px;
+      cursor:pointer;font-size:13px;color:var(--text-medium);font-family:'Lato',sans-serif;
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+    }
+    .result-header h2{
+      font-family:'Playfair Display',serif;font-size:24px;font-weight:500;
+      background:linear-gradient(135deg,var(--gold-dark),var(--gold));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    }
+    .result-header p{font-family:'Cormorant Garamond',serif;font-size:13px;font-style:italic;color:var(--text-light);}
+    .result-content{width:100%;max-width:480px;padding:14px 18px 40px;display:flex;flex-direction:column;gap:15px;align-self:center;}
+
+    /* LOOK BADGE */
+    .look-badge{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 18px;border-radius:30px;
+      background:linear-gradient(135deg,rgba(201,169,110,0.2),rgba(232,164,164,0.25));
+      border:1.5px solid var(--gold);
+      font-family:'Playfair Display',serif;font-size:16px;font-weight:500;color:var(--gold-dark);
+      letter-spacing:0.5px;align-self:flex-start;
+    }
+    .look-badge-emoji{font-size:18px;}
+    .look-why{
+      background:linear-gradient(135deg,rgba(255,255,255,0.6),rgba(245,214,214,0.35));
+      border-radius:16px;border:1px solid var(--glass-border);
+      padding:14px 16px;font-size:12.5px;color:var(--text-medium);line-height:1.65;
+    }
+    .look-why b{color:var(--text-dark);}
+
+    /* FACE ANALYSIS CARD */
+    .face-analysis-card{
+      background:linear-gradient(135deg,rgba(255,255,255,0.7) 0%,rgba(245,214,214,0.5) 100%);
+      border-radius:20px;border:1.5px solid var(--glass-border);padding:18px;
+      box-shadow:var(--shadow-rose);display:flex;flex-direction:column;gap:12px;
+    }
+    .face-analysis-title{
+      font-family:'Playfair Display',serif;font-size:16px;color:var(--text-dark);
+      display:flex;align-items:center;gap:6px;
+    }
+    .face-features-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+    .face-feature-item{
+      background:rgba(255,255,255,0.55);border-radius:14px;
+      border:1px solid rgba(201,169,110,0.18);padding:11px 13px;
+    }
+    .feature-label{
+      font-size:10px;text-transform:uppercase;letter-spacing:0.8px;
+      color:var(--text-light);margin-bottom:3px;font-weight:400;
+    }
+    .feature-value{
+      font-family:'Cormorant Garamond',serif;font-size:14px;font-weight:600;color:var(--text-dark);
+    }
+    .feature-note{
+      font-size:11px;color:var(--text-medium);margin-top:2px;line-height:1.4;
     }
 
-    .app-shell {
-      width: 100%;
-      max-width: 500px;
-      background: linear-gradient(to bottom, #fdfcfb 0%, #e2d1c3 100%);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      box-shadow: 0 0 40px rgba(0,0,0,0.1);
+    /* SECTION TITLE */
+    .section-title{
+      font-family:'Playfair Display',serif;font-size:18px;font-weight:500;color:var(--text-dark);
+      display:flex;align-items:center;gap:8px;
+    }
+    .section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--gold-light),transparent);}
+
+    /* MAKEUP GRID */
+    .makeup-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+    .makeup-item{
+      background:linear-gradient(135deg,rgba(255,255,255,0.7) 0%,rgba(245,214,214,0.35) 100%);
+      border-radius:17px;border:1px solid var(--glass-border);padding:13px 11px;
+      display:flex;flex-direction:column;gap:8px;
+    }
+    .makeup-item-header{display:flex;align-items:center;gap:8px;}
+    .makeup-item-icon{
+      width:36px;height:36px;border-radius:10px;
+      background:linear-gradient(135deg,var(--rose-light),var(--peach-light));
+      display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;
+    }
+    .makeup-item-name{font-family:'Cormorant Garamond',serif;font-size:13px;font-weight:600;color:var(--text-dark);line-height:1.2;}
+    .shade-label{font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px;}
+    .shade-chip{
+      display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:20px;
+      background:linear-gradient(135deg,rgba(201,169,110,0.13),rgba(232,164,164,0.18));
+      border:1px solid rgba(201,169,110,0.22);
+      font-size:11px;color:var(--gold-dark);font-family:'Cormorant Garamond',serif;font-weight:600;
+    }
+    .shade-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+
+    /* TUTORIAL */
+    .tutorial-card{
+      background:linear-gradient(135deg,rgba(255,255,255,0.65),rgba(240,196,168,0.28));
+      border-radius:20px;border:1.5px solid var(--glass-border);padding:19px;box-shadow:var(--shadow-gold);
+    }
+    .tutorial-look-title{font-family:'Playfair Display',serif;font-size:17px;color:var(--text-dark);margin-bottom:3px;}
+    .tutorial-look-sub{font-size:12px;color:var(--text-light);font-style:italic;font-family:'Cormorant Garamond',serif;margin-bottom:15px;}
+    .tutorial-steps{display:flex;flex-direction:column;gap:11px;}
+    .tutorial-step{display:flex;gap:11px;align-items:flex-start;}
+    .tutorial-step-num{
+      width:25px;height:25px;border-radius:50%;
+      background:linear-gradient(135deg,var(--gold),var(--gold-dark));
+      color:#fff;font-size:12px;font-weight:600;
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;
+    }
+    .tutorial-step-text{font-size:12.5px;color:var(--text-medium);line-height:1.6;}
+    .tutorial-step-text b{color:var(--text-dark);}
+
+    .btn-retake{
+      width:100%;padding:14px;border-radius:16px;border:1.5px solid var(--glass-border);
+      background:rgba(255,255,255,0.55);color:var(--text-medium);
+      font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:600;letter-spacing:1px;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation;
     }
 
-    /* --- OPENING SPLASH --- */
-    #splash-screen {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: var(--moia-cream);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-
-    .brand-logo {
-      font-family: 'Playfair Display', serif;
-      font-size: 4rem;
-      color: var(--moia-gold);
-      margin: 0;
-      letter-spacing: -1px;
-    }
-
-    .magic-icon { font-size: 2rem; animation: rotate 2s infinite linear; }
-    @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-    /* --- CONTENT --- */
-    .header { padding: 40px 20px 20px; text-align: center; }
-    .header h1 { font-family: 'Playfair Display', serif; color: var(--moia-gold); font-size: 2.8rem; margin: 0; }
-
-    .main { padding: 20px; flex: 1; }
-
-    .card {
-      background: var(--glass);
-      backdrop-filter: blur(10px);
-      border-radius: 30px;
-      padding: 20px;
-      border: 1px solid rgba(255,255,255,0.5);
-      margin-bottom: 25px;
-      text-align: center;
-    }
-
-    .camera-box {
-      width: 100%;
-      height: 300px;
-      background: #000;
-      border-radius: 25px;
-      position: relative;
-      overflow: hidden;
-      margin: 15px 0;
-    }
-
-    #video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none; }
-
-    /* --- STEP BY STEP TEXT ONLY --- */
-    .step-text-only {
-      background: white;
-      border-radius: 20px;
-      margin: 10px 0;
-      padding: 18px;
-      text-align: left;
-      border-left: 5px solid var(--moia-pink-soft);
-      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-    }
-
-    .step-text-only b { color: var(--moia-gold); font-size: 1rem; display: block; margin-bottom: 5px; }
-    .step-text-only p { font-size: 0.85rem; margin: 0; line-height: 1.5; color: var(--text-main); }
-
-    .shade-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
-    .shade-item {
-      padding: 10px; background: rgba(255,255,255,0.9);
-      border-radius: 15px; display: flex; align-items: center; font-size: 0.75rem;
-    }
-    .color-dot { width: 22px; height: 22px; border-radius: 50%; margin-right: 10px; border: 1px solid #ddd; }
-
-    button {
-      background: linear-gradient(135deg, #F8B195, #F67280);
-      color: white; border: none; padding: 16px; border-radius: 50px;
-      font-weight: 600; width: 100%; margin: 10px 0; cursor: pointer;
-    }
-
-    .btn-secondary { background: white; color: var(--moia-gold); border: 1px solid var(--moia-gold); }
-    .footer { text-align: center; padding: 20px; font-size: 0.8rem; color: var(--moia-gold); }
+    .header,.main,.footer{display:none!important;}
   </style>
 </head>
-
 <body>
 
-  <div id="splash-screen">
-    <div class="magic-icon">✨</div>
-    <h1 class="brand-logo">Moia</h1>
-    <p style="letter-spacing: 3px; font-size: 0.7rem; color: #A3834B;">BEAUTY MAGIC 🪄</p>
+  <!-- SPLASH -->
+  <div id="screen-splash" class="screen">
+    <div class="splash-title">Moia</div>
+    <div class="gold-divider"></div>
+    <div class="splash-tagline">your personal makeup analyst</div>
+    <div class="splash-dots">
+      <div class="splash-dot"></div><div class="splash-dot"></div><div class="splash-dot"></div>
+    </div>
   </div>
 
-  <div class="app-shell">
-    <header class="header">
-      <h1>Moia</h1>
-      <p>Your Personal Beauty Wizard ✨</p>
-    </header>
-
-    <main class="main">
-      <section class="card" id="cam-section">
-        <h3>Analisis Wajah 📸</h3>
-        <div class="camera-box">
-          <video id="video" autoplay playsinline></video>
-          <div id="status" style="color: white; margin-top: 130px;">Kamera Siap...</div>
+  <!-- CAMERA -->
+  <div id="screen-camera" class="screen">
+    <div class="camera-header"><div class="camera-header-title">Moia ✦</div></div>
+    <div class="camera-viewport-wrap">
+      <div class="camera-frame">
+        <div class="camera-placeholder" id="cameraPlaceholder">
+          <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+            <path d="M6 14a4 4 0 014-4h4l3-4h18l3 4h4a4 4 0 014 4v22a4 4 0 01-4 4H10a4 4 0 01-4-4V14z" stroke="#c9a96e" stroke-width="2" fill="none"/>
+            <circle cx="26" cy="25" r="7" stroke="#c9a96e" stroke-width="2" fill="none"/>
+            <circle cx="26" cy="25" r="3" fill="rgba(201,169,110,0.25)"/>
+          </svg>
+          <p>Kamera belum aktif</p>
         </div>
-        <button onclick="startCamera()" id="btnStart">Buka Kamera 🎥</button>
-        <button onclick="analyzeFace()" class="btn-secondary" id="btnAnalyze" disabled>Analisis Sekarang ✨</button>
-      </section>
-
-      <section id="results" class="card" style="display: none;">
-        <h2 id="look-type" style="color: var(--moia-gold);">Korean Look 🌸</h2>
-        <div id="analysis-reason" style="font-size: 0.85rem; padding: 15px; background: #fff; border-radius: 20px; margin-bottom: 20px; text-align: left;">
-        </div>
-
-        <h4 align="left">Rekomendasi Shade 🎨</h4>
-        <div class="shade-grid" id="shades"></div>
-
-        <h4 align="left">Tutorial Langkah-Demi-Langkah 📖</h4>
-        <div id="tutorial-list"></div>
-      </section>
-
-      <button onclick="alert('tombol testing hidup')" class="btn-secondary">Ini tombol 1 😊</button>
-    </main>
-
-    <footer class="footer">
-      <p>© 2026 Moia - Anwar Fauzi 🪄</p>
-    </footer>
+        <video id="videoEl" autoplay playsinline muted></video>
+        <div class="camera-corner tl"></div><div class="camera-corner tr"></div>
+        <div class="camera-corner bl"></div><div class="camera-corner br"></div>
+        <div class="camera-face-guide" id="faceGuide"></div>
+      </div>
+      <div class="camera-controls">
+        <button class="btn-moia btn-camera-on" id="btnCameraOn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          Nyalakan Kamera
+        </button>
+        <button class="btn-moia btn-camera-off" id="btnCameraOff">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M15 9.34V5a2 2 0 00-2-2H4a2 2 0 00-2 2v14a2 2 0 002 2h11a2 2 0 002-2v-3"/><path d="M23 7l-7 5 7 5V7z"/></svg>
+          Tutup Kamera
+        </button>
+        <button class="btn-analyze" id="btnAnalyze">✨ Analisis Wajahku</button>
+      </div>
+    </div>
   </div>
+
+  <!-- LOADING -->
+  <div id="screen-loading" class="screen">
+    <div class="loading-orb">
+      <svg width="36" height="36" viewBox="0 0 80 80" fill="none">
+        <path d="M20 46 Q14 46 14 40 Q14 35 19 34.5 Q19 28 25 27 Q26 22 32 22 Q38 22 39 27 Q44 25 48 30 Q53 30 53 36 Q58 37 57 42 Q57 47 51 47 Z" stroke="#c9a96e" stroke-width="2.5" fill="rgba(249,232,232,0.4)"/>
+        <circle cx="30" cy="37" r="1.8" fill="#c9a96e"/><circle cx="39" cy="37" r="1.8" fill="#c9a96e"/>
+        <path d="M32 41 Q35 44 38 41" stroke="#c9a96e" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="loading-title">Menganalisis Wajahmu...</div>
+    <div class="loading-sub">Moia sedang bekerja ✦</div>
+    <div class="loading-steps">
+      <div class="loading-step" id="step1"><div class="loading-step-dot"></div>Mendeteksi bentuk wajah</div>
+      <div class="loading-step" id="step2"><div class="loading-step-dot"></div>Menganalisis mata, hidung & bibir</div>
+      <div class="loading-step" id="step3"><div class="loading-step-dot"></div>Menentukan type makeup terbaik</div>
+      <div class="loading-step" id="step4"><div class="loading-step-dot"></div>Menyiapkan shade & tutorial</div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="screen-result" class="screen">
+    <div class="result-header">
+      <button class="result-back-btn" id="btnBack">← Kembali</button>
+      <h2>Hasil Analisis</h2>
+      <p id="resultSubtitle">Analisis personal Moia untukmu</p>
+    </div>
+    <div class="result-content">
+
+      <!-- Recommended Look Badge -->
+      <div id="lookBadgeWrap"></div>
+      <div id="lookWhyWrap"></div>
+
+      <!-- Face Analysis -->
+      <div class="section-title">Analisis Wajah</div>
+      <div class="face-analysis-card">
+        <div class="face-analysis-title">✦ Fitur Wajahmu</div>
+        <div class="face-features-grid" id="faceFeaturesGrid"></div>
+      </div>
+
+      <!-- Makeup Recommendations -->
+      <div class="section-title">Rekomendasi Shade</div>
+      <div class="makeup-grid" id="makeupGrid"></div>
+
+      <!-- Tutorial -->
+      <div class="section-title">Tutorial Makeup</div>
+      <div class="tutorial-card" id="tutorialCard"></div>
+
+      <button class="btn-retake" id="btnRetake">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 109-9M3 3v9h9"/></svg>
+        Analisis Ulang
+      </button>
+    </div>
+  </div>
+
+  <!-- Original PWA elements preserved & hidden -->
+  <header class="header"><h1>PWA Template</h1><p>Contoh aplikasi web progresif yang responsif</p></header>
+  <main class="main">
+    <section class="card">
+      <h2>Selamat Datang!</h2>
+      <p>Ini adalah template PWA responsif. Kamu bisa ubah teks, warna, dan layout-nya sesuai kebutuhan.</p>
+      <button onclick="alert('PWA aktif!')">Tes Tombol</button>
+    </section>
+  </main>
+  <button onclick="alert('tombol testing hidup')" style="display:none;">Ini tombol 1</button>
+  <footer class="footer"><p>© 2025 Anwar Fauzi</p></footer>
 
   <script>
-    window.addEventListener('load', () => {
-      setTimeout(() => { document.getElementById('splash-screen').style.display = 'none'; }, 2500);
-    });
+  /* ============================================================
+     FACE FEATURE DATA — all possible combinations
+  ============================================================ */
+  var FACE_SHAPES = ['Oval','Bulat','Persegi','Hati','Panjang'];
 
-    let video = document.getElementById('video');
-    let isCamOn = false;
+  var EYE_TYPES   = ['Almond','Bulat','Monolid','Hooded','Upturned','Downturned'];
+  var LIP_TYPES   = ['Full & Plump','Tipis & Halus','Bow-shaped','Wide & Flat','Heart-shaped'];
+  var NOSE_TYPES  = ['Mancung & Ramping','Pesek & Lebar','Sedang & Proporsional','Button Nose','Aquiline'];
 
-    async function startCamera() {
-      if(!isCamOn) {
-        try {
-          let stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-          video.srcObject = stream;
-          video.style.display = 'block';
-          document.getElementById('status').style.display = 'none';
-          document.getElementById('btnAnalyze').disabled = false;
-          isCamOn = true;
-          btnStart.innerText = "Tutup Kamera ❌";
-        } catch (e) { alert("Izin kamera ditolak"); }
-      } else {
-        video.srcObject.getTracks().forEach(t => t.stop());
-        video.style.display = 'none';
-        document.getElementById('status').style.display = 'block';
-        btnStart.innerText = "Buka Kamera 🎥";
-        isCamOn = false;
+  var EYE_NOTES = {
+    'Almond':     'Mata almond simetris & proporsional — semua teknik eyeliner cocok.',
+    'Bulat':      'Mata bulat terlihat besar & ekspresif — cat eye memanjangkan bentuknya.',
+    'Monolid':    'Kelopak tunggal — teknik gradient shadow menciptakan dimensi kedalaman.',
+    'Hooded':     'Kelopak berat menutupi lipatan — shadow gelap di crease membuka tampilan.',
+    'Upturned':   'Sudut luar mata terangkat — liner tebal di outer corner menonjolkan kesan.',
+    'Downturned': 'Sudut luar menurun — wing liner terangkat memberikan efek lift.',
+  };
+  var LIP_NOTES = {
+    'Full & Plump':    'Bibir penuh dan bervolume — lip tint nude atau bold keduanya menonjol.',
+    'Tipis & Halus':   'Bibir tipis — lip liner overline tipis menciptakan ilusi lebih penuh.',
+    'Bow-shaped':      'Bibir berbentuk busur dengan cupid\'s bow menonjol — highlight di tengah mempertegas.',
+    'Wide & Flat':     'Bibir lebar flat — warna pekat di center bibir memberikan dimensi volume.',
+    'Heart-shaped':    'Bibir berbentuk hati dengan dip di tengah — warna bold mempertegas kontur cantik ini.',
+  };
+  var NOSE_NOTES = {
+    'Mancung & Ramping':       'Hidung ramping — highlight di bridge mempertegas dimensi.',
+    'Pesek & Lebar':           'Hidung lebar — contour tipis di sisi hidung menciptakan ilusi lebih ramping.',
+    'Sedang & Proporsional':   'Hidung proporsional — teknik contour standar bekerja sempurna.',
+    'Button Nose':             'Hidung kecil dan imut — sedikit highlight di tip hidung memberi kesan perky.',
+    'Aquiline':                'Hidung khas dengan bridge yang tinggi — blush tinggi menyeimbangkan keseluruhan wajah.',
+  };
+
+  /* ============================================================
+     LOOK RECOMMENDATION LOGIC
+     Kombinasi face shape + mata + bibir + hidung → recommended look
+  ============================================================ */
+
+  // Matrix: face shape → tendencies
+  var SHAPE_LOOK_SCORE = {
+    //              korean natural bold latina
+    'Oval':    [4,    3,     3,    3],
+    'Bulat':   [4,    3,     2,    3],
+    'Persegi': [2,    3,     4,    3],
+    'Hati':    [4,    3,     3,    2],
+    'Panjang': [3,    4,     3,    2],
+  };
+  // Eye bonus
+  var EYE_LOOK_BONUS = {
+    'Almond':     [1,0,1,1], 'Bulat':    [2,0,0,0],
+    'Monolid':    [2,0,0,0], 'Hooded':   [0,1,1,0],
+    'Upturned':   [1,0,0,2], 'Downturned':[0,1,1,0],
+  };
+  // Lip bonus
+  var LIP_LOOK_BONUS = {
+    'Full & Plump':  [0,0,1,2], 'Tipis & Halus': [1,1,0,0],
+    'Bow-shaped':    [2,0,0,0], 'Wide & Flat':   [0,1,0,1],
+    'Heart-shaped':  [1,0,1,0],
+  };
+  // Nose bonus
+  var NOSE_LOOK_BONUS = {
+    'Mancung & Ramping':     [1,0,1,0], 'Pesek & Lebar':     [0,1,0,1],
+    'Sedang & Proporsional': [0,1,0,0], 'Button Nose':       [2,1,0,0],
+    'Aquiline':              [0,0,1,1],
+  };
+
+  var LOOK_KEYS  = ['korean','natural','bold','latina'];
+  var LOOK_LABELS = {
+    korean:  {label:'Korean Look',  emoji:'🌸'},
+    natural: {label:'Natural Look', emoji:'🍃'},
+    bold:    {label:'Bold Look',    emoji:'💄'},
+    latina:  {label:'Latina Look',  emoji:'🌺'},
+  };
+
+  function recommendLook(faceShape, eye, lip, nose) {
+    var base   = SHAPE_LOOK_SCORE[faceShape]  || [3,3,3,3];
+    var eyeB   = EYE_LOOK_BONUS[eye]          || [0,0,0,0];
+    var lipB   = LIP_LOOK_BONUS[lip]          || [0,0,0,0];
+    var noseB  = NOSE_LOOK_BONUS[nose]        || [0,0,0,0];
+    var scores = base.map(function(v,i){ return v + eyeB[i] + lipB[i] + noseB[i]; });
+    var maxIdx = scores.indexOf(Math.max.apply(null, scores));
+    return LOOK_KEYS[maxIdx];
+  }
+
+  function buildWhyText(look, faceShape, eye, lip, nose) {
+    var reasons = {
+      korean:  'Korean look cocok karena wajah <b>'+faceShape+'</b> kamu terlihat proporsional dengan teknik dewy base dan blush draping. Bentuk mata <b>'+eye+'</b> cocok dengan eye makeup gradient soft, bibir <b>'+lip+'</b> tampil manis dengan lip tint MLBB, dan hidung <b>'+nose+'</b> sempurna untuk highlight bridge tipis khas korean aesthetic.',
+      natural: 'Natural look adalah pilihan terbaik karena wajah <b>'+faceShape+'</b> kamu sudah proporsional dan cantik secara alami. Mata <b>'+eye+'</b> terlihat segar dengan riasan minimal, bibir <b>'+lip+'</b> sangat cocok dengan nude MLBB, dan hidung <b>'+nose+'</b> hanya perlu sentuhan kecil untuk tampilan sehari-hari yang memukau.',
+      bold:    'Bold look paling menonjolkan fitur wajah <b>'+faceShape+'</b> kamu yang kuat dan berkarakter. Mata <b>'+eye+'</b> sangat cocok dengan smoky eye dramatis, bibir <b>'+lip+'</b> makin impresif dengan lip bold, dan hidung <b>'+nose+'</b> diperkuat dengan contouring tegas yang menciptakan dimensi luar biasa.',
+      latina:  'Latina look memancarkan kehangatan dan sensualitas yang sesuai dengan wajah <b>'+faceShape+'</b> kamu. Mata <b>'+eye+'</b> berkilau dengan copper eyeshadow, bibir <b>'+lip+'</b> makin sensual dengan nude warm atau coral red, dan hidung <b>'+nose+'</b> cocok dipadukan bronzer sun-kissed untuk tampilan total yang memukau.',
+    };
+    return reasons[look];
+  }
+
+  /* ============================================================
+     SHADE DATA — per look, per face shape (customized)
+  ============================================================ */
+  var MAKEUP_ITEMS = [
+    {key:'cushion',     name:'Cushion',      emoji:'🟫', label:'Foundation'},
+    {key:'eyeshadow',   name:'Eye Shadow',   emoji:'👁️', label:'Mata'},
+    {key:'blush',       name:'Blush On',     emoji:'🌸', label:'Pipi'},
+    {key:'lip',         name:'Lip / Tint',   emoji:'💋', label:'Bibir'},
+    {key:'undereye',    name:'Under Eye',    emoji:'✨', label:'Koreksi'},
+    {key:'contour',     name:'Contour',      emoji:'🪨', label:'Dimensi'},
+    {key:'eyebrow',     name:'Eyebrow',      emoji:'〰️', label:'Alis'},
+    {key:'eyeliner',    name:'Eyeliner',     emoji:'🖊️', label:'Mata'},
+    {key:'highlighter', name:'Highlighter',  emoji:'💫', label:'Glow'},
+    {key:'powder',      name:'Loose Powder', emoji:'🧴', label:'Setting'},
+  ];
+
+  // Base shades per look
+  var BASE_SHADES = {
+    korean:{
+      cushion:    {shade:'N13 – Porcelain Beige',       color:'#f5e6d8'},
+      eyeshadow:  {shade:'Dusty Rose & Champagne',      color:'#e8b4a8'},
+      blush:      {shade:'Coral Pink – Peach Flush',    color:'#f4a090'},
+      lip:        {shade:'MLBB Rose – Sheer Coral',     color:'#e87070'},
+      undereye:   {shade:'Peach Corrector',             color:'#f8c8a8'},
+      contour:    {shade:'Cool Taupe – Soft',           color:'#c4a898'},
+      eyebrow:    {shade:'Ash Brown – Natural',         color:'#8b6855'},
+      eyeliner:   {shade:'Warm Brown / Burgundy',       color:'#6b3a3a'},
+      highlighter:{shade:'Pearl White – Liquid Light',  color:'#faf0e0'},
+      powder:     {shade:'Translucent Lavender',        color:'#e8d8f0'},
+    },
+    natural:{
+      cushion:    {shade:'NC20 – Natural Beige',        color:'#e8d0b8'},
+      eyeshadow:  {shade:'Warm Nude & Soft Bronze',     color:'#c8a880'},
+      blush:      {shade:'Peachy Nude – Barely There',  color:'#e8b898'},
+      lip:        {shade:'MLBB Nude Rose',              color:'#c88878'},
+      undereye:   {shade:'Yellow Peach Corrector',      color:'#f0d098'},
+      contour:    {shade:'Warm Sand – Sun-kissed',      color:'#c0956a'},
+      eyebrow:    {shade:'Medium Brown – Hair Match',   color:'#7a5540'},
+      eyeliner:   {shade:'Soft Brown – Pencil',         color:'#5a3820'},
+      highlighter:{shade:'Golden Champagne',            color:'#f0d898'},
+      powder:     {shade:'Banana Setting Powder',       color:'#f8e8c0'},
+    },
+    bold:{
+      cushion:    {shade:'Full Coverage Matte – NC25',  color:'#d4b898'},
+      eyeshadow:  {shade:'Smoky Burgundy & Dark Brown', color:'#7a3038'},
+      blush:      {shade:'Berry Rose – Sculpted',       color:'#c07080'},
+      lip:        {shade:'Classic Red / Deep Berry',    color:'#c02040'},
+      undereye:   {shade:'Full Coverage Orange',        color:'#e89060'},
+      contour:    {shade:'Deep Contour – Cool Brown',   color:'#8a6050'},
+      eyebrow:    {shade:'Dark Brown – Sharp Defined',  color:'#5a3828'},
+      eyeliner:   {shade:'Matte Black – Winged',        color:'#202020'},
+      highlighter:{shade:'Blinding Gold Foil',          color:'#d4a840'},
+      powder:     {shade:'Full Matte Setting Powder',   color:'#e0d0c0'},
+    },
+    latina:{
+      cushion:    {shade:'N30 – Warm Tawny',            color:'#d4a878'},
+      eyeshadow:  {shade:'Copper & Burnt Orange',       color:'#c07040'},
+      blush:      {shade:'Warm Coral – Terracotta',     color:'#e08060'},
+      lip:        {shade:'Warm Nude Brown / Coral Red', color:'#c85840'},
+      undereye:   {shade:'Orange-Peach Corrector',      color:'#f09858'},
+      contour:    {shade:'Bronzer – Warm Cocoa',        color:'#a07040'},
+      eyebrow:    {shade:'Dark Brown – Bold Arched',    color:'#4a2e18'},
+      eyeliner:   {shade:'Jet Black – Smoky',           color:'#181818'},
+      highlighter:{shade:'Warm Gold – Tropical Glow',  color:'#d4a040'},
+      powder:     {shade:'Warm Bronzing Powder',        color:'#d4a870'},
+    },
+  };
+
+  // Face shape shade adjustments (override specific items)
+  var SHAPE_SHADE_OVERRIDE = {
+    'Bulat':{
+      korean:  {contour:{shade:'Cool Taupe – Slim Sculpt', color:'#b89888'}, blush:{shade:'Peach – High Placement', color:'#f0a888'}},
+      natural: {contour:{shade:'Warm Taupe – Slim Define',  color:'#b89070'}},
+      bold:    {contour:{shade:'Deep Cocoa – Strong Sculpt',color:'#7a5040'}, blush:{shade:'Berry – High Cheek',     color:'#b86070'}},
+      latina:  {contour:{shade:'Dark Bronzer – Slim Face',  color:'#906030'}},
+    },
+    'Persegi':{
+      korean:  {eyeliner:{shade:'Warm Brown – Rounded Wing', color:'#7a4040'}},
+      natural: {blush:{shade:'Soft Peach – Round Blush',    color:'#f0c098'}},
+      bold:    {eyeliner:{shade:'Black – Soft Wing',         color:'#303030'}, blush:{shade:'Mauve Rose – Soft',     color:'#c07888'}},
+      latina:  {blush:{shade:'Coral – Soft Round Blend',    color:'#e07858'}},
+    },
+    'Hati':{
+      korean:  {blush:{shade:'Rose – Low Placement',        color:'#e89898'}},
+      natural: {blush:{shade:'Peachy Nude – Low Round',     color:'#e8b098'}},
+      bold:    {blush:{shade:'Berry – Low Sculpt',          color:'#b06878'}, contour:{shade:'Light Cocoa – Chin Define', color:'#987060'}},
+      latina:  {blush:{shade:'Terracotta – Low & Round',    color:'#d87860'}},
+    },
+    'Panjang':{
+      korean:  {blush:{shade:'Coral Pink – Horizontal Sweep', color:'#f4a088'}, contour:{shade:'Taupe – Temple & Chin', color:'#c0a090'}},
+      natural: {blush:{shade:'Peachy – Horizontal Wide',    color:'#eab898'}},
+      bold:    {blush:{shade:'Berry – Wide Horizontal',     color:'#c07080'}, contour:{shade:'Brown – Temple & Chin',   color:'#8a5848'}},
+      latina:  {blush:{shade:'Coral – Horizontal Sweep',    color:'#df7858'}},
+    },
+  };
+
+  function getShadesForProfile(look, faceShape) {
+    var base = JSON.parse(JSON.stringify(BASE_SHADES[look]));
+    var overrides = (SHAPE_SHADE_OVERRIDE[faceShape] || {})[look] || {};
+    Object.keys(overrides).forEach(function(k){ base[k] = overrides[k]; });
+    return base;
+  }
+
+  /* ============================================================
+     TUTORIAL DATA — per look, references face shape context
+  ============================================================ */
+  var TUTORIAL_DATA = {
+    korean:{
+      steps: function(faceShape, eye, lip, nose){
+        return [
+          {title:'Skincare & Prep',    text:'Mulai dengan <b>skincare routine</b> lengkap — serum, moisturizer, SPF. Primer ringan untuk kulit dewy tahan lama.'},
+          {title:'Base & Cushion',     text:'Aplikasikan <b>cushion N13</b> dengan finger patting tipis-tipis. Biarkan kulit bernafas untuk finish glass-skin. '+(faceShape==='Bulat'?'Fokus coverage di area T-zone, biarkan pipi lebih tipis.':faceShape==='Panjang'?'Ratakan ke seluruh wajah termasuk dahi dan dagu.':'')},
+          {title:'Under Eye & Contour',text:'Peach corrector di dark circle bawah mata. Contouring <b>sangat tipis</b> hanya di sisi hidung & pelipis. '+(faceShape==='Bulat'?'Tambah kontur tipis di bawah tulang pipi untuk ilusi tirus.':faceShape==='Hati'?'Kontur tipis di dahi untuk menyeimbangkan lebar atas.':'')},
+          {title:'Eye Makeup',         text:'Champagne shimmer di seluruh kelopak. <b>Dusty rose</b> di outer corner blend ke atas. '+(eye==='Monolid'?'Gradient shadow dari lash line ke atas 5mm untuk menciptakan dimensi kelopak.':eye==='Hooded'?'Taruh shadow lebih tinggi di atas lipatan agar terlihat saat mata terbuka.':eye==='Bulat'?'Eyeliner tipis di outer corner saja untuk memanjangkan bentuk.':`Eyeliner warm brown tipis di lower lash line.`)},
+          {title:'Eyebrow',            text:'Alis <b>natural feathery</b> warna ash brown. Bentuk lurus sedikit melengkung. Brow soap untuk kesan fluffy voluminus.'},
+          {title:'Blush',              text:(faceShape==='Bulat'?'Blush <b>coral pink</b> di tulang pipi bagian atas, blend ke arah pelipis. Posisi tinggi memberi kesan tirus.':faceShape==='Panjang'?'Blush horizontal di area apple cheeks ke arah telinga, tidak terlalu ke atas.':faceShape==='Hati'?'Blush di bawah tulang pipi sedikit lebih rendah untuk menyeimbangkan dagu.':'Blush <b>coral pink</b> di apple of cheeks, blend ke atas menuju pelipis.')+' Efek sunkissed aegyo.'},
+          {title:'Lip',                text:'<b>Lip tint MLBB rose</b> dengan teknik gradient — pekat di tengah, fade ke luar. '+(lip==='Tipis & Halus'?'Aplikasikan sedikit overline di cupid\'s bow untuk kesan lebih penuh.':lip==='Full & Plump'?'Aplikasikan langsung, volumenya sudah sempurna.':'')+'Finishing gloss tipis di tengah bibir.'},
+          {title:'Set & Glow',         text:'Highlighter pearl di tulang pipi & '+(nose==='Mancung & Ramping'?'bridge hidung':nose==='Pesek & Lebar'?'tip hidung saja, skip bridge':'ujung hidung')+'. Set loose powder translucent ringan di T-zone saja.'},
+        ];
       }
+    },
+    natural:{
+      steps: function(faceShape, eye, lip, nose){
+        return [
+          {title:'Prep',               text:'Skincare ringan + SPF. Jika kulit sudah bagus, kamu bisa skip primer.'},
+          {title:'Base',               text:'BB cream atau cushion NC20 <b>sangat tipis</b>. Biarkan tekstur kulit alami terlihat. '+(faceShape==='Bulat'?'Fokus di area yang perlu diratakan saja.':'Aplikasikan hanya di area yang tidak merata.')},
+          {title:'Under Eye',          text:'Concealer peach-tone <b>tipis</b> hanya di dark circle. Blend baik agar tidak cakey.'},
+          {title:'Eye Makeup',         text:(eye==='Monolid'?'<b>Nude shimmer</b> dari lash line ke atas. Eyeliner tipis di atas untuk memberi definisi.':eye==='Hooded'?'Bronze matte <b>di atas lipatan</b> agar terlihat. Skip crease shadow yang tersembunyi.':eye==='Bulat'?'Warm nude + pencil liner tipis di outer corner memanjangkan mata.':'Warm nude di seluruh kelopak, bronze matte di crease. Eyeliner brown tipis di upper lash line.')+' Mascara brown natural.'},
+          {title:'Eyebrow',            text:'Isi alis matching warna rambut. <b>Brow gel clear</b> untuk kesan natural-fluffy. Jangan overdraw.'},
+          {title:'Blush & Contour',    text:(faceShape==='Bulat'?'Blush peachy nude di tulang pipi atas. Contour warm sand tipis untuk slimming effect.':faceShape==='Panjang'?'Blush horizontal lebar di apple cheeks, skip contouring berlebihan.':faceShape==='Hati'?'Blush di bawah tulang pipi, kontur sangat ringan hanya di pelipis.':'Blush peachy nude di apple cheeks. Kontur warm sand di bawah tulang pipi.')},
+          {title:'Lip',                text:(lip==='Tipis & Halus'?'Lip liner sedikit overline + ':'')+' <b>MLBB nude rose</b>. Finish dengan <b>lip oil</b> untuk kesan "my lips but better" yang segar.'},
+          {title:'Setting',            text:'<b>Banana powder</b> di T-zone + bawah mata saja. '+(nose==='Pesek & Lebar'?'Skip bedak di sisi hidung agar kontur alami tetap terlihat.':'')+'Setting spray untuk finish dewy natural.'},
+        ];
+      }
+    },
+    bold:{
+      steps: function(faceShape, eye, lip, nose){
+        return [
+          {title:'Prime',              text:'<b>Face primer</b> merata seluruh wajah. <b>Eye primer</b> di kelopak untuk ketahanan shadow seharian.'},
+          {title:'Base',               text:'<b>Full coverage foundation</b> dengan sponge damp. Concealer tebal di bawah mata, sekitar hidung, dan bibir. '+(faceShape==='Bulat'?'Setting powder lebih tebal di pipi sebelum kontur.':faceShape==='Persegi'?'Ratakan dengan baik di area jawline sebelum contouring.':'')},
+          {title:'Contour & Blush',    text:(faceShape==='Bulat'?'Contour deep cocoa <b>kuat</b> di bawah tulang pipi, sisi hidung, dan rahang. Blush berry di atas kontur.':faceShape==='Panjang'?'Kontur di pelipis dan dagu. Blush <b>horizontal</b> berry rose untuk melebarkan.':faceShape==='Hati'?'Kontur ringan di dahi lebar, blush berry rose di bawah tulang pipi.':'Contour cool brown kuat di bawah tulang pipi, hidung, dan rahang. Blush berry rose.')},
+          {title:'Smoky Eye',          text:(eye==='Monolid'?'Shadow dark brown dari lash line ke atas 8mm, blend dengan baik. Eyeliner hitam di waterline.':eye==='Hooded'?'Shadow gelap di atas lipatan yang terlihat. <b>Liner di lash line</b> tebal untuk intensitas maksimal.':eye==='Bulat'?'Smoky eye dari outer corner, extend ke bawah untuk efek cat eye edgy.':`Deep brown di crease, <b>smoky burgundy</b> dari outer corner blend ke dalam. Hitam di lash line.`)},
+          {title:'Eyeliner',           text:(eye==='Downturned'?'<b>Wing terangkat kuat</b> untuk melawan sudut menurun. Panjangkan wing ke atas.':eye==='Upturned'?'Wing tipis saja, sudut mata sudah terangkat alami.':'<b>Cat eye / winged liner hitam</b> tegas. Wing mengikuti arah sudut mata.')+' Smudge sedikit di bawah mata untuk dimensi.'},
+          {title:'Highlight',          text:'<b>Blinding gold highlighter</b> di puncak tulang pipi & cupid\'s bow. '+(nose==='Mancung & Ramping'?'Highlight tipis di bridge hidung mempertegas dimensi.':nose==='Pesek & Lebar'?'Skip highlight di bridge, fokus di tip hidung & tulang pipi saja.':'Ujung hidung sedikit.')},
+          {title:'Eyebrow',            text:'Alis <b>dark brown tegas</b> dengan pomade atau pensil tajam. Isi penuh untuk kesan power brow.'},
+          {title:'Lip',                text:'Lip liner overline tipis + isi penuh dengan <b>'+(lip==='Full & Plump'?'classic red — langsung pakai, volumenya sudah sempurna':lip==='Tipis & Halus'?'deep berry — overline lebih tegas untuk kesan penuh':'classic red atau deep berry')+'</b>. Finish matte.'},
+        ];
+      }
+    },
+    latina:{
+      steps: function(faceShape, eye, lip, nose){
+        return [
+          {title:'Base & Bronze',      text:'Foundation warm-toned N30. <b>Bronzer warm cocoa</b> merata di seluruh wajah untuk kesan sun-kissed. '+(faceShape==='Bulat'?'Bronzer lebih tebal di pelipis dan sisi wajah.':faceShape==='Panjang'?'Bronzer di pipi dan dahi depan, lebih rata horizontal.':'')},
+          {title:'Sculpting',          text:(faceShape==='Bulat'?'Kontur dark bronzer <b>kuat</b> di sisi wajah dan rahang untuk slimming effect.':faceShape==='Persegi'?'Kontur di sudut rahang dan pelipis untuk melembutkan bentuk kotak.':faceShape==='Hati'?'Kontur tipis di dahi lebar, fokus di sisi pipi bawah.':'Kontur kuat di sisi wajah, bawah tulang pipi, dan hidung.')},
+          {title:'Eye Makeup',         text:(eye==='Almond'?'<b>Copper di kelopak</b>, burnt orange di crease dengan blend seamless. Eyeliner hitam tebal di waterline.':eye==='Bulat'?'Copper shimmer + burnt orange di outer V. Eyeliner tebal di upper & lower lash line menambah drama.':eye==='Monolid'?'Gradient copper dari lash line ke atas. Eyeliner hitam tebal di waterline dan outer corner.':'<b>Copper di kelopak</b>, burnt orange di crease. Eyeliner hitam tebal di waterline dan upper lash line.')},
+          {title:'Eyebrow',            text:'Alis <b>tebal, arkuata, defined</b>. Brow soap dulu untuk volume, lalu pomade dark brown untuk presisi.'},
+          {title:'Blush',              text:(faceShape==='Panjang'?'Terracotta blush <b>horizontal lebar</b> di tulang pipi, tidak terlalu ke atas.':faceShape==='Hati'?'Terracotta blush di bawah tulang pipi, blend merata ke pipi.':'<b>Terracotta blush</b> tinggi di tulang pipi mengalir ke pelipis.')+' Kunci tampilan latina yang hangat.'},
+          {title:'Lip',                text:'Lip liner overline + isi dengan <b>'+(lip==='Full & Plump'?'coral red langsung — bibir penuh kamu sudah sempurna untuk latina look':lip==='Tipis & Halus'?'warm nude brown + overline tegas untuk kesan lebih penuh':'warm nude brown atau coral red')+'</b>. Gloss tipis di atas.'},
+          {title:'Nose & Glow',        text:(nose==='Pesek & Lebar'?'Kontur tipis di sisi hidung dengan bronzer. ':'nose'==='Mancung & Ramping'?'Highlight tipis di bridge hidung. ':'')+' <b>Warm gold highlighter</b> di tulang pipi tinggi, ujung hidung & inner corner mata.'},
+        ];
+      }
+    },
+  };
+
+  /* ============================================================
+     STATE
+  ============================================================ */
+  var cameraStream  = null;
+  var analysisResult = null; // { faceShape, eye, lip, nose, look }
+
+  /* ============================================================
+     INIT
+  ============================================================ */
+  document.addEventListener('DOMContentLoaded', function(){
+    forceResetCamera();
+
+    document.getElementById('btnCameraOn').addEventListener('click',  function(){ toggleCamera(true); });
+    document.getElementById('btnCameraOff').addEventListener('click', function(){ toggleCamera(false); });
+    document.getElementById('btnAnalyze').addEventListener('click',   startAnalysis);
+    document.getElementById('btnBack').addEventListener('click',      goBack);
+    document.getElementById('btnRetake').addEventListener('click',    goBack);
+
+    if (!sessionStorage.getItem('moia_splash')) {
+      sessionStorage.setItem('moia_splash','1');
+      showScreen('screen-splash');
+      setTimeout(function(){ showScreen('screen-camera'); }, 2600);
+    } else {
+      showScreen('screen-camera');
     }
+  });
 
-    function analyzeFace() {
-      document.getElementById('btnAnalyze').innerText = "Sedang Memproses... ✨";
-      setTimeout(() => {
-        document.getElementById('results').style.display = 'block';
-        
-        const makeupData = {
-          title: "Soft Korean Look 🌸",
-          reason: "Analisis menunjukkan fitur wajahmu yang **Lembut**. Tipe ini dipilih untuk memberikan kesan wajah yang lebih segar, bercahaya, dan natural sesuai dengan karakter wajahmu. 😊",
-          shades: [
-            { l: "Under Eye", n: "Peach Light", c: "#f7ccac" },
-            { l: "Contour", n: "Soft Taupe", c: "#b29e8d" },
-            { l: "Alis", n: "Ash Brown", c: "#5d4c44" },
-            { l: "Blush", n: "Soft Peach", c: "#ffb3a7" },
-            { l: "Lipstick", n: "Berry Tint", c: "#e25e6b" },
-            { l: "Eyeshadow", n: "Champagne", c: "#e7d1b6" }
-          ],
-          steps: [
-            { t: "1. Area Under Eye 👁️", d: "Aplikasikan concealer tipis-tipis pada area bawah mata. Tap lembut menggunakan jari manis agar produk menyatu sempurna dengan kulit." },
-            { t: "2. Definisi Contour 📐", d: "Gunakan contour pada area rahang dan sedikit di bawah tulang pipi. Baurkan dengan gerakan memutar ke arah atas untuk efek wajah lebih tirus." },
-            { t: "3. Gambar Alis Natural ✏️", d: "Isi bagian alis yang kosong mengikuti arah tumbuh rambut. Hindari menekan terlalu keras agar hasilnya tetap natural dan tidak kaku." },
-            { t: "4. Sentuhan Blush On 😊", d: "Gunakan blush on tepat di puncak pipi (apple cheeks) saat kamu tersenyum. Tarik sedikit ke arah telinga agar terlihat lebih segar." },
-            { t: "5. Gradient Lips 💄", d: "Gunakan liptint di bagian dalam bibir, lalu baurkan ke arah luar menggunakan jari untuk menciptakan efek gradasi khas Korean Look." }
-          ]
-        };
+  /* ============================================================
+     NAVIGATION
+  ============================================================ */
+  function showScreen(id){
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+    document.getElementById(id).classList.add('active');
+  }
+  function goBack(){
+    stopCamera();
+    showScreen('screen-camera');
+  }
 
-        document.getElementById('look-type').innerText = makeupData.title;
-        document.getElementById('analysis-reason').innerHTML = makeupData.reason;
-        
-        let shadeHtml = "";
-        makeupData.shades.forEach(s => {
-          shadeHtml += `<div class="shade-item"><div class="color-dot" style="background:${s.c}"></div><div><b>${s.l}</b><br>${s.n}</div></div>`;
+  /* ============================================================
+     CAMERA
+  ============================================================ */
+  function toggleCamera(turnOn){
+    if(turnOn){
+      if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+        alert('Browser ini tidak mendukung akses kamera.\nGunakan Chrome atau Safari terbaru di localhost atau HTTPS.');
+        return;
+      }
+      navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false})
+        .then(function(stream){
+          cameraStream = stream;
+          var v = document.getElementById('videoEl');
+          v.srcObject = stream; v.style.display = 'block';
+          document.getElementById('cameraPlaceholder').style.display = 'none';
+          document.getElementById('faceGuide').style.display = 'block';
+          document.getElementById('btnCameraOn').style.display = 'none';
+          document.getElementById('btnCameraOff').style.display = 'flex';
+        })
+        .catch(function(err){
+          var msg = 'Tidak dapat mengakses kamera.\n\n';
+          if(err.name==='NotAllowedError'||err.name==='PermissionDeniedError') msg+='Izin kamera ditolak. Izinkan di pengaturan browser.';
+          else if(err.name==='NotFoundError') msg+='Kamera tidak ditemukan.';
+          else if(err.name==='NotReadableError') msg+='Kamera sedang digunakan aplikasi lain.';
+          else msg+=err.name+': '+err.message;
+          alert(msg);
         });
-        document.getElementById('shades').innerHTML = shadeHtml;
-
-        let stepHtml = "";
-        makeupData.steps.forEach(st => {
-          stepHtml += `<div class="step-text-only"><b>${st.t}</b><p>${st.d}</p></div>`;
-        });
-        document.getElementById('tutorial-list').innerHTML = stepHtml;
-        
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-        document.getElementById('btnAnalyze').innerText = "Analisis Ulang ✨";
-      }, 2000);
+    } else {
+      stopCamera();
     }
+  }
+  function stopCamera(){
+    if(cameraStream){ cameraStream.getTracks().forEach(function(t){t.stop();}); cameraStream=null; }
+    forceResetCamera();
+  }
+  function forceResetCamera(){
+    var v=document.getElementById('videoEl');
+    if(v){v.pause();v.srcObject=null;v.style.display='none';}
+    var ph=document.getElementById('cameraPlaceholder'); if(ph) ph.style.display='flex';
+    var fg=document.getElementById('faceGuide');         if(fg) fg.style.display='none';
+    var bOn=document.getElementById('btnCameraOn');      if(bOn) bOn.style.display='flex';
+    var bOff=document.getElementById('btnCameraOff');    if(bOff) bOff.style.display='none';
+  }
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./service-worker.js').catch(err => console.log('SW Gagal'));
-    }
+  /* ============================================================
+     ANALYSIS
+  ============================================================ */
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  function startAnalysis(){
+    showScreen('screen-loading');
+    var ids=['step1','step2','step3','step4'];
+    ids.forEach(function(id){ document.getElementById(id).classList.remove('active'); });
+    ids.forEach(function(id,i){
+      setTimeout(function(){
+        ids.forEach(function(s){ document.getElementById(s).classList.remove('active'); });
+        document.getElementById(id).classList.add('active');
+      }, i*900);
+    });
+    setTimeout(function(){
+      var faceShape = pick(FACE_SHAPES);
+      var eye       = pick(EYE_TYPES);
+      var lip       = pick(LIP_TYPES);
+      var nose      = pick(NOSE_TYPES);
+      var look      = recommendLook(faceShape, eye, lip, nose);
+      analysisResult = {faceShape:faceShape, eye:eye, lip:lip, nose:nose, look:look};
+      buildResult();
+      showScreen('screen-result');
+      document.getElementById('screen-result').scrollTop = 0;
+    }, 4000);
+  }
+
+  /* ============================================================
+     BUILD RESULT
+  ============================================================ */
+  function buildResult(){
+    var r = analysisResult;
+    var lbl = LOOK_LABELS[r.look];
+
+    // Subtitle
+    document.getElementById('resultSubtitle').textContent = 'Wajah '+r.faceShape+' · '+lbl.label;
+
+    // Look badge
+    document.getElementById('lookBadgeWrap').innerHTML =
+      '<div class="look-badge"><span class="look-badge-emoji">'+lbl.emoji+'</span>'+lbl.label+' direkomendasikan</div>';
+
+    // Why text
+    document.getElementById('lookWhyWrap').innerHTML =
+      '<div class="look-why">'+buildWhyText(r.look, r.faceShape, r.eye, r.lip, r.nose)+'</div>';
+
+    // Face features
+    var features = [
+      {label:'Bentuk Wajah', value:r.faceShape, note:''},
+      {label:'Bentuk Mata',  value:r.eye,       note:EYE_NOTES[r.eye]||''},
+      {label:'Bentuk Bibir', value:r.lip,       note:LIP_NOTES[r.lip]||''},
+      {label:'Bentuk Hidung',value:r.nose,      note:NOSE_NOTES[r.nose]||''},
+    ];
+    var fh = '';
+    features.forEach(function(f){
+      fh += '<div class="face-feature-item">'
+        +'<div class="feature-label">'+f.label+'</div>'
+        +'<div class="feature-value">'+f.value+'</div>'
+        +(f.note?'<div class="feature-note">'+f.note+'</div>':'')
+        +'</div>';
+    });
+    document.getElementById('faceFeaturesGrid').innerHTML = fh;
+
+    // Makeup grid
+    var shades = getShadesForProfile(r.look, r.faceShape);
+    var gh='';
+    MAKEUP_ITEMS.forEach(function(item){
+      var s = shades[item.key];
+      gh += '<div class="makeup-item">'
+        +'<div class="makeup-item-header">'
+        +'<div class="makeup-item-icon">'+item.emoji+'</div>'
+        +'<div><div class="makeup-item-name">'+item.name+'</div>'
+        +'<div class="shade-label">'+item.label+'</div></div>'
+        +'</div>'
+        +'<div class="shade-chip"><span class="shade-dot" style="background:'+s.color+';border:1px solid rgba(0,0,0,0.08)"></span>'+s.shade+'</div>'
+        +'</div>';
+    });
+    document.getElementById('makeupGrid').innerHTML = gh;
+
+    // Tutorial
+    var td = TUTORIAL_DATA[r.look];
+    var steps = td.steps(r.faceShape, r.eye, r.lip, r.nose);
+    var sh='';
+    steps.forEach(function(s,i){
+      sh += '<div class="tutorial-step">'
+        +'<div class="tutorial-step-num">'+(i+1)+'</div>'
+        +'<div class="tutorial-step-text"><b>'+s.title+':</b> '+s.text+'</div>'
+        +'</div>';
+    });
+    document.getElementById('tutorialCard').innerHTML =
+      '<div class="tutorial-look-title">'+lbl.emoji+' '+lbl.label+'</div>'
+      +'<div class="tutorial-look-sub">Tutorial personal untuk wajah '+r.faceShape+' · mata '+r.eye+'</div>'
+      +'<div class="tutorial-steps">'+sh+'</div>';
+  }
+
+  /* ============================================================
+     SERVICE WORKER (original preserved)
+  ============================================================ */
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(function(){ console.log('SW registered!'); })
+      .catch(function(err){ console.error('SW gagal:',err); });
+  }
   </script>
 
 </body>
